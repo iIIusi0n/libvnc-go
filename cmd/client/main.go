@@ -16,7 +16,7 @@ func main() {
 
 	client.SetHost("127.0.0.1")
 	client.SetPort(5900)
-	client.SetPassword("asdf")
+	client.SetPassword("password")
 
 	// Configure app data (compression, quality, encodings, remote cursor)
 	client.SetAppData(2, 6, "tight zrle ultra copyrect hextile zlib corre rre raw", true)

@@ -174,9 +174,9 @@ func (c *Client) SetAppData(compressLevel, qualityLevel int, encodings string, u
 
 func (c *Client) SetCanHandleNewFBSize(canHandle bool) {
 	if canHandle {
-		c.rfbClient.canHandleNewFBSize = C.rfbBool(1)
+		c.rfbClient.canHandleNewFBSize = C.int(1)
 	} else {
-		c.rfbClient.canHandleNewFBSize = C.rfbBool(0)
+		c.rfbClient.canHandleNewFBSize = C.int(0)
 	}
 }
 
@@ -255,7 +255,7 @@ func (c *Client) SendFrameBufferUpdateRequest(x, y, w, h int, incremental bool) 
 	} else {
 		inc = 0
 	}
-	C.SendFrameBufferUpdateRequest(c.rfbClient, C.int(x), C.int(y), C.int(w), C.int(h), inc)
+	C.SendFramebufferUpdateRequest(c.rfbClient, C.int(x), C.int(y), C.int(w), C.int(h), inc)
 }
 
 func (c *Client) SendPointerEvent(x, y int, buttonMask uint8) {
@@ -269,7 +269,7 @@ func (c *Client) SendKeyEvent(key uint32, down bool) {
 	} else {
 		d = 0
 	}
-	C.SendKeyEvent(c.rfbClient, C.ulong(key), d)
+	C.SendKeyEvent(c.rfbClient, C.uint(key), d)
 }
 
 func (c *Client) Close() {

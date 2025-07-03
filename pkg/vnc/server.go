@@ -43,6 +43,7 @@ type KeyEventHandler func(down bool, key uint32, clientPtr unsafe.Pointer)
 type PointerEventHandler func(buttonMask, x, y int, clientPtr unsafe.Pointer)
 type NewClientHandler func(clientPtr unsafe.Pointer)
 
+
 var (
 	serverHandlers = make(map[*C.rfbScreenInfo]*Server)
 	serverMutex    sync.RWMutex
@@ -165,33 +166,33 @@ func NewServer(width, height, bitsPerSample, samplesPerPixel, bytesPerPixel int)
 	return server
 }
 
-func (s *Server) SetPixelFormat(bitsPerPixel, depth int, bigEndian, trueColour bool, redMax, greenMax, blueMax, redShift, greenShift, blueShift int) {
-	s.rfbScreen.serverFormat.bitsPerPixel = C.uchar(bitsPerPixel)
-	s.rfbScreen.serverFormat.depth = C.uchar(depth)
-	if bigEndian {
+func (s *Server) SetPixelFormat(format PixelFormat) {
+	s.rfbScreen.serverFormat.bitsPerPixel = C.uchar(format.BitsPerPixel)
+	s.rfbScreen.serverFormat.depth = C.uchar(format.Depth)
+	if format.BigEndian {
 		s.rfbScreen.serverFormat.bigEndian = 1
 	} else {
 		s.rfbScreen.serverFormat.bigEndian = 0
 	}
-	if trueColour {
+	if format.TrueColour {
 		s.rfbScreen.serverFormat.trueColour = 1
 	} else {
 		s.rfbScreen.serverFormat.trueColour = 0
 	}
-	s.rfbScreen.serverFormat.redMax = C.ushort(redMax)
-	s.rfbScreen.serverFormat.greenMax = C.ushort(greenMax)
-	s.rfbScreen.serverFormat.blueMax = C.ushort(blueMax)
-	s.rfbScreen.serverFormat.redShift = C.uchar(redShift)
-	s.rfbScreen.serverFormat.greenShift = C.uchar(greenShift)
-	s.rfbScreen.serverFormat.blueShift = C.uchar(blueShift)
+	s.rfbScreen.serverFormat.redMax = C.ushort(format.RedMax)
+	s.rfbScreen.serverFormat.greenMax = C.ushort(format.GreenMax)
+	s.rfbScreen.serverFormat.blueMax = C.ushort(format.BlueMax)
+	s.rfbScreen.serverFormat.redShift = C.uchar(format.RedShift)
+	s.rfbScreen.serverFormat.greenShift = C.uchar(format.GreenShift)
+	s.rfbScreen.serverFormat.blueShift = C.uchar(format.BlueShift)
 }
 
 func (s *Server) SetBGR0PixelFormat() {
-	s.SetPixelFormat(32, 24, false, true, 255, 255, 255, 16, 8, 0)
+	s.SetPixelFormat(PixelFormatBGR0)
 }
 
 func (s *Server) SetStandardPixelFormat() {
-	s.SetPixelFormat(32, 24, false, true, 255, 255, 255, 0, 8, 16)
+	s.SetPixelFormat(PixelFormatStandard)
 }
 
 func (s *Server) SetPort(port int) {

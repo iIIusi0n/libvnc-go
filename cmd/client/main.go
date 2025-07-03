@@ -19,7 +19,13 @@ func main() {
 	client.SetPassword("password")
 
 	// Configure app data (compression, quality, encodings, remote cursor)
-	client.SetAppData(2, 6, "tight zrle ultra copyrect hextile zlib corre rre raw", true)
+	appConfig := vnc.AppDataConfig{
+		CompressLevel:   2,
+		QualityLevel:    6,
+		Encodings:       "tight zrle ultra copyrect hextile zlib corre rre raw",
+		UseRemoteCursor: true,
+	}
+	client.SetAppData(appConfig)
 
 	// Configure pixel format for standard (non-IPEPS) connections
 	client.SetStandardPixelFormat()

@@ -41,6 +41,47 @@ import (
 type GotFrameBufferUpdateHandler func(x, y, w, h int)
 type FinishedFrameBufferUpdateHandler func()
 
+type PixelFormat struct {
+	BitsPerPixel int
+	Depth        int
+	BigEndian    bool
+	TrueColour   bool
+	RedMax       int
+	GreenMax     int
+	BlueMax      int
+	RedShift     int
+	GreenShift   int
+	BlueShift    int
+}
+
+type AppDataConfig struct {
+	CompressLevel   int
+	QualityLevel    int
+	Encodings       string
+	UseRemoteCursor bool
+}
+
+// Predefined pixel formats
+var (
+	PixelFormatBGR0 = PixelFormat{
+		BitsPerPixel: 32, Depth: 24, BigEndian: false, TrueColour: true,
+		RedMax: 255, GreenMax: 255, BlueMax: 255,
+		RedShift: 16, GreenShift: 8, BlueShift: 0,
+	}
+	
+	PixelFormatStandard = PixelFormat{
+		BitsPerPixel: 32, Depth: 24, BigEndian: false, TrueColour: true,
+		RedMax: 255, GreenMax: 255, BlueMax: 255,
+		RedShift: 0, GreenShift: 8, BlueShift: 16,
+	}
+	
+	PixelFormatIPEPS = PixelFormat{
+		BitsPerPixel: 16, Depth: 15, BigEndian: false, TrueColour: true,
+		RedMax: 31, GreenMax: 31, BlueMax: 31,
+		RedShift: 10, GreenShift: 5, BlueShift: 0,
+	}
+)
+
 var (
 	clientHandlers = make(map[*C.rfbClient]GotFrameBufferUpdateHandler)
 	clientFinishedHandlers = make(map[*C.rfbClient]FinishedFrameBufferUpdateHandler)
@@ -126,46 +167,50 @@ func (c *Client) SetPassword(password string) {
 	C.setPassword(c.rfbClient, c.passwordCString)
 }
 
-func (c *Client) SetPixelFormat(bitsPerPixel, depth int, bigEndian, trueColour bool, redMax, greenMax, blueMax, redShift, greenShift, blueShift int) {
-	c.rfbClient.format.bitsPerPixel = C.uchar(bitsPerPixel)
-	c.rfbClient.format.depth = C.uchar(depth)
-	if bigEndian {
+func (c *Client) SetPixelFormat(format PixelFormat) {
+	c.rfbClient.format.bitsPerPixel = C.uchar(format.BitsPerPixel)
+	c.rfbClient.format.depth = C.uchar(format.Depth)
+	if format.BigEndian {
 		c.rfbClient.format.bigEndian = 1
 	} else {
 		c.rfbClient.format.bigEndian = 0
 	}
-	if trueColour {
+	if format.TrueColour {
 		c.rfbClient.format.trueColour = 1
 	} else {
 		c.rfbClient.format.trueColour = 0
 	}
-	c.rfbClient.format.redMax = C.ushort(redMax)
-	c.rfbClient.format.greenMax = C.ushort(greenMax)
-	c.rfbClient.format.blueMax = C.ushort(blueMax)
-	c.rfbClient.format.redShift = C.uchar(redShift)
-	c.rfbClient.format.greenShift = C.uchar(greenShift)
-	c.rfbClient.format.blueShift = C.uchar(blueShift)
+	c.rfbClient.format.redMax = C.ushort(format.RedMax)
+	c.rfbClient.format.greenMax = C.ushort(format.GreenMax)
+	c.rfbClient.format.blueMax = C.ushort(format.BlueMax)
+	c.rfbClient.format.redShift = C.uchar(format.RedShift)
+	c.rfbClient.format.greenShift = C.uchar(format.GreenShift)
+	c.rfbClient.format.blueShift = C.uchar(format.BlueShift)
 }
 
 func (c *Client) SetIPEPSPixelFormat() {
-	c.SetPixelFormat(16, 15, false, true, 31, 31, 31, 10, 5, 0)
+	c.SetPixelFormat(PixelFormatIPEPS)
 }
 
 func (c *Client) SetStandardPixelFormat() {
-	c.SetPixelFormat(32, 24, false, true, 255, 255, 255, 0, 8, 16)
+	c.SetPixelFormat(PixelFormatStandard)
 }
 
-func (c *Client) SetAppData(compressLevel, qualityLevel int, encodings string, useRemoteCursor bool) {
-	c.rfbClient.appData.compressLevel = C.int(compressLevel)
-	c.rfbClient.appData.qualityLevel = C.int(qualityLevel)
+func (c *Client) SetBGR0PixelFormat() {
+	c.SetPixelFormat(PixelFormatBGR0)
+}
+
+func (c *Client) SetAppData(config AppDataConfig) {
+	c.rfbClient.appData.compressLevel = C.int(config.CompressLevel)
+	c.rfbClient.appData.qualityLevel = C.int(config.QualityLevel)
 	
 	if c.encodingsCString != nil {
 		C.free(unsafe.Pointer(c.encodingsCString))
 	}
-	c.encodingsCString = C.CString(encodings)
+	c.encodingsCString = C.CString(config.Encodings)
 	c.rfbClient.appData.encodingsString = c.encodingsCString
 	
-	if useRemoteCursor {
+	if config.UseRemoteCursor {
 		c.rfbClient.appData.useRemoteCursor = C.rfbBool(1)
 	} else {
 		c.rfbClient.appData.useRemoteCursor = C.rfbBool(0)

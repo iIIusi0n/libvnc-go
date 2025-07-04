@@ -5,6 +5,7 @@ import (
 	"libvnc-go/pkg/vnc"
 	"log"
 	"math"
+	"net"
 	"time"
 	"unsafe"
 )
@@ -45,6 +46,8 @@ func main() {
 	fmt.Printf("VNC server started on port 5900\n")
 	fmt.Printf("Resolution: %dx%d\n", server.GetWidth(), server.GetHeight())
 	fmt.Printf("Password: password\n")
+
+	go testNewClientWithConn(server)
 
 	go func() {
 		frameBuffer := server.GetFrameBuffer()
@@ -89,4 +92,37 @@ func main() {
 	}
 
 	fmt.Println("VNC server stopped")
+}
+
+func testNewClientWithConn(server *vnc.Server) {
+	fmt.Println("\n=== Testing NewClientWithConn ===")
+
+	time.Sleep(500 * time.Millisecond)
+
+	conn, err := net.Dial("tcp", "localhost:5900")
+	if err != nil {
+		fmt.Printf("Failed to connect to server: %v\n", err)
+		return
+	}
+	defer conn.Close()
+
+	fmt.Printf("Successfully connected to server: %s -> %s\n", conn.LocalAddr(), conn.RemoteAddr())
+
+	client, err := vnc.NewClientWithConn(server, conn)
+	if err != nil {
+		fmt.Printf("Failed to create client with connection: %v\n", err)
+		return
+	}
+
+	fmt.Printf("Successfully created RFB client with connection: %p\n", client.GetPointer())
+
+	if client.GetPointer() == nil {
+		fmt.Println("Client pointer is nil")
+		return
+	}
+
+	fmt.Println("Keeping connection alive for 3 seconds...")
+	time.Sleep(3 * time.Second)
+
+	fmt.Println("Test completed successfully!")
 }

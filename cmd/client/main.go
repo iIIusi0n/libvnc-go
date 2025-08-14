@@ -2,9 +2,10 @@ package main
 
 import (
 	"fmt"
-	"libvnc-go/pkg/vnc"
 	"log"
 	"time"
+
+	"github.com/libvnc-go/pkg/vnc"
 )
 
 func main() {

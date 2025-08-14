@@ -1,3 +1,27 @@
+// Package vnc provides VNC (Virtual Network Computing) client and server functionality
+// by wrapping the native libvncserver and libvncclient C libraries.
+//
+// This package supports both VNC client and server operations, providing idiomatic
+// Go interfaces for VNC protocol handling, framebuffer management, and event processing.
+//
+// Example usage:
+//
+//	// Create a VNC client
+//	client := vnc.NewClient(8, 3, 4)
+//	client.SetHost("127.0.0.1")
+//	client.SetPort(5900)
+//	client.SetPassword("password")
+//	if !client.Init() {
+//	    log.Fatal("Failed to initialize client")
+//	}
+//
+//	// Create a VNC server
+//	server := vnc.NewServer(800, 600, 8, 3, 4)
+//	server.SetPort(5900)
+//	server.SetPassword("password")
+//	if err := server.InitServer(); err != nil {
+//	    log.Fatal("Failed to initialize server")
+//	}
 package vnc
 
 /*
@@ -41,31 +65,42 @@ import (
 	"unsafe"
 )
 
+// GotFrameBufferUpdateHandler is a callback function type for handling framebuffer updates.
+// It receives the coordinates and dimensions of the updated region.
 type GotFrameBufferUpdateHandler func(x, y, w, h int)
+
+// FinishedFrameBufferUpdateHandler is a callback function type for handling
+// framebuffer update completion events.
 type FinishedFrameBufferUpdateHandler func()
 
+// PixelFormat defines the pixel format configuration for VNC connections.
+// It specifies how pixel data is encoded and transmitted.
 type PixelFormat struct {
-	BitsPerPixel int
-	Depth        int
-	BigEndian    bool
-	TrueColour   bool
-	RedMax       int
-	GreenMax     int
-	BlueMax      int
-	RedShift     int
-	GreenShift   int
-	BlueShift    int
+	BitsPerPixel int  // Number of bits per pixel
+	Depth        int  // Color depth
+	BigEndian    bool // Whether to use big-endian byte order
+	TrueColour   bool // Whether to use true color
+	RedMax       int  // Maximum red value
+	GreenMax     int  // Maximum green value
+	BlueMax      int  // Maximum blue value
+	RedShift     int  // Red component bit shift
+	GreenShift   int  // Green component bit shift
+	BlueShift    int  // Blue component bit shift
 }
 
+// AppDataConfig contains configuration options for VNC client applications.
+// It controls compression, quality, and encoding settings.
 type AppDataConfig struct {
-	CompressLevel   int
-	QualityLevel    int
-	Encodings       string
-	UseRemoteCursor bool
+	CompressLevel   int    // Compression level (0-9)
+	QualityLevel    int    // Quality level (0-9)
+	Encodings       string // Space-separated list of encoding types
+	UseRemoteCursor bool   // Whether to use remote cursor
 }
 
-// Predefined pixel formats
+// Predefined pixel formats for common use cases.
 var (
+	// PixelFormatStandard represents the standard 32-bit RGBA pixel format.
+	// This is the most commonly used format for VNC connections.
 	PixelFormatStandard = PixelFormat{
 		BitsPerPixel: 32, Depth: 24, BigEndian: false, TrueColour: true,
 		RedMax: 255, GreenMax: 255, BlueMax: 255,
@@ -101,6 +136,9 @@ func goFinishedFrameBufferUpdateCallback(cl *C.rfbClient) {
 	}
 }
 
+// Client represents a VNC client that can connect to VNC servers.
+// It provides methods for establishing connections, handling events,
+// and sending user input to the server.
 type Client struct {
 	rfbClient                        *C.rfbClient
 	gotFrameBufferUpdateHandler      GotFrameBufferUpdateHandler
@@ -110,11 +148,21 @@ type Client struct {
 	encodingsCString                 *C.char
 }
 
+// ServerClient represents a client connection to a VNC server.
+// It's used when creating client connections from within a server context.
 type ServerClient struct {
 	rfbClient C.rfbClientPtr
 	connFile  *os.File
 }
 
+// NewClient creates a new VNC client with the specified pixel format parameters.
+//
+// Parameters:
+//   - bitsPerSample: Number of bits per color sample (typically 8)
+//   - samplesPerPixel: Number of color samples per pixel (typically 3 for RGB)
+//   - bytesPerPixel: Number of bytes per pixel (typically 4 for RGBA)
+//
+// Returns a new Client instance or nil if creation fails.
 func NewClient(bitsPerSample, samplesPerPixel, bytesPerPixel int) *Client {
 	rfbClient := C.rfbGetClient(C.int(bitsPerSample), C.int(samplesPerPixel), C.int(bytesPerPixel))
 	if rfbClient == nil {

@@ -1,3 +1,3 @@
-module libvnc-go
+module github.com/libvnc-go
 
 go 1.22.2

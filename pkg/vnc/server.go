@@ -1,3 +1,27 @@
+// Package vnc provides VNC (Virtual Network Computing) client and server functionality
+// by wrapping the native libvncserver and libvncclient C libraries.
+//
+// This package supports both VNC client and server operations, providing idiomatic
+// Go interfaces for VNC protocol handling, framebuffer management, and event processing.
+//
+// Example usage:
+//
+//	// Create a VNC client
+//	client := vnc.NewClient(8, 3, 4)
+//	client.SetHost("127.0.0.1")
+//	client.SetPort(5900)
+//	client.SetPassword("password")
+//	if !client.Init() {
+//	    log.Fatal("Failed to initialize client")
+//	}
+//
+//	// Create a VNC server
+//	server := vnc.NewServer(800, 600, 8, 3, 4)
+//	server.SetPort(5900)
+//	server.SetPassword("password")
+//	if err := server.InitServer(); err != nil {
+//	    log.Fatal("Failed to initialize server")
+//	}
 package vnc
 
 /*
@@ -39,8 +63,16 @@ import (
 	"unsafe"
 )
 
+// KeyEventHandler is a callback function type for handling keyboard events.
+// It receives the key state (down/up), key code, and client pointer.
 type KeyEventHandler func(down bool, key uint32, clientPtr unsafe.Pointer)
+
+// PointerEventHandler is a callback function type for handling mouse/pointer events.
+// It receives the button mask, coordinates, and client pointer.
 type PointerEventHandler func(buttonMask, x, y int, clientPtr unsafe.Pointer)
+
+// NewClientHandler is a callback function type for handling new client connections.
+// It receives the client pointer when a new client connects.
 type NewClientHandler func(clientPtr unsafe.Pointer)
 
 var (
@@ -131,6 +163,9 @@ func goNewClientCallback(cl C.rfbClientPtr) C.enum_rfbNewClientAction {
 	return C.RFB_CLIENT_ACCEPT
 }
 
+// Server represents a VNC server that can accept client connections.
+// It provides methods for creating servers, handling client events,
+// and managing framebuffer content.
 type Server struct {
 	rfbScreen           *C.rfbScreenInfo
 	frameBuffer         []byte
@@ -141,6 +176,16 @@ type Server struct {
 	running             bool
 }
 
+// NewServer creates a new VNC server with the specified dimensions and pixel format.
+//
+// Parameters:
+//   - width: Screen width in pixels
+//   - height: Screen height in pixels
+//   - bitsPerSample: Number of bits per color sample (typically 8)
+//   - samplesPerPixel: Number of color samples per pixel (typically 3 for RGB)
+//   - bytesPerPixel: Number of bytes per pixel (typically 4 for RGBA)
+//
+// Returns a new Server instance or nil if creation fails.
 func NewServer(width, height, bitsPerSample, samplesPerPixel, bytesPerPixel int) *Server {
 	screen := C.rfbGetScreen(nil, nil, C.int(width), C.int(height), C.int(bitsPerSample), C.int(samplesPerPixel), C.int(bytesPerPixel))
 	if screen == nil {

@@ -1,6 +1,6 @@
 # libvnc-go
 
-[![Go Reference](https://pkg.go.dev/badge/libvnc-go.svg)](https://pkg.go.dev/libvnc-go)
+[![Go Reference](https://pkg.go.dev/badge/github.com/iIIusi0n/libvnc-go.svg)](https://pkg.go.dev/github.com/iIIusi0n/libvnc-go)
 
 A Go wrapper of libvncserver/libvncclient providing VNC client and server functionality.
 
@@ -37,7 +37,7 @@ Recommended to use MSYS2 which has the necessary packages.
 ### Go Installation
 
 ```bash
-go get github.com/libvnc-go
+go get github.com/iIIusi0n/libvnc-go
 ```
 
 ## Quick Start

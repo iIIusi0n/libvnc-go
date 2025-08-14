@@ -8,7 +8,7 @@ import (
 	"time"
 	"unsafe"
 
-	"github.com/libvnc-go/pkg/vnc"
+	"github.com/iIIusi0n/libvnc-go/pkg/vnc"
 )
 
 func main() {

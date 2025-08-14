@@ -31,16 +31,23 @@ func main() {
 
 	client.SetCanHandleNewFBSize(false)
 
+	var lastGotFrameBufferUpdate time.Time
 	client.SetGotFrameBufferUpdateHandler(func(x, y, w, h int) {
-		// Get framebuffer data
 		buffer := client.GetFrameBuffer()
 		if buffer != nil {
-			fmt.Printf("Frame buffer data size: %d bytes\n", len(buffer))
+			if time.Since(lastGotFrameBufferUpdate) >= 10*time.Second {
+				fmt.Printf("Frame buffer data size: %d bytes\n", len(buffer))
+				lastGotFrameBufferUpdate = time.Now()
+			}
 		}
 	})
 
+	var lastFinishedFrameBufferUpdate time.Time
 	client.SetFinishedFrameBufferUpdateHandler(func() {
-		fmt.Println("Frame buffer update finished")
+		if time.Since(lastFinishedFrameBufferUpdate) >= 10*time.Second {
+			fmt.Println("Frame buffer update finished")
+			lastFinishedFrameBufferUpdate = time.Now()
+		}
 	})
 
 	if !client.Init() {
@@ -48,6 +55,7 @@ func main() {
 	}
 
 	fmt.Println("VNC client initialized successfully")
+	fmt.Printf("Frame buffer size: %dx%d\n", client.GetFrameBufferWidth(), client.GetFrameBufferHeight())
 
 	client.SendFrameBufferUpdateRequest(0, 0, client.GetFrameBufferWidth(), client.GetFrameBufferHeight(), false)
 

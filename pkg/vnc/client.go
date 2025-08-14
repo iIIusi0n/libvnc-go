@@ -36,7 +36,6 @@ import "C"
 import (
 	"fmt"
 	"net"
-	"os"
 	"sync"
 	"unsafe"
 )
@@ -112,7 +111,6 @@ type Client struct {
 
 type ServerClient struct {
 	rfbClient C.rfbClientPtr
-	connFile  *os.File
 }
 
 func NewClient(bitsPerSample, samplesPerPixel, bytesPerPixel int) *Client {
@@ -131,34 +129,27 @@ func NewClientWithConn(screen *Server, conn net.Conn) (*ServerClient, error) {
 		return nil, fmt.Errorf("conn cannot be nil")
 	}
 
-	var fd int
-	var file *os.File
+	var sock uintptr
 	switch c := conn.(type) {
 	case *net.TCPConn:
 		var err error
-		file, err = c.File()
+		raw, err := c.SyscallConn()
 		if err != nil {
-			return nil, fmt.Errorf("failed to get file descriptor from TCPConn: %v", err)
+			return nil, fmt.Errorf("failed to get raw socket: %v", err)
 		}
-		fd = int(file.Fd())
-	case *net.UnixConn:
-		var err error
-		file, err = c.File()
-		if err != nil {
-			return nil, fmt.Errorf("failed to get file descriptor from UnixConn: %v", err)
-		}
-		fd = int(file.Fd())
+		raw.Control(func(fd uintptr) {
+			sock = fd
+		})
 	default:
 		return nil, fmt.Errorf("unsupported connection type: %T", conn)
 	}
 
-	rfbClient := C.rfbNewClient(screen.rfbScreen, C.int(fd))
+	rfbClient := C.rfbNewClient(screen.rfbScreen, C.SOCKET(sock))
 	if rfbClient == nil {
-		file.Close()
 		return nil, fmt.Errorf("failed to create RFB client")
 	}
 
-	return &ServerClient{rfbClient: rfbClient, connFile: file}, nil
+	return &ServerClient{rfbClient: rfbClient}, nil
 }
 
 func (sc *ServerClient) GetPointer() unsafe.Pointer {
@@ -168,9 +159,6 @@ func (sc *ServerClient) GetPointer() unsafe.Pointer {
 func (sc *ServerClient) Close() {
 	if sc.rfbClient != nil {
 		sc.rfbClient = nil
-	}
-	if sc.connFile != nil {
-		sc.connFile = nil
 	}
 }
 

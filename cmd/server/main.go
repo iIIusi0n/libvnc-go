@@ -82,13 +82,8 @@ func main() {
 
 	fmt.Println("Server is running. Press Ctrl+C to stop.")
 
-	for {
+	for server.IsActive() {
 		server.ProcessEvents(100)
-
-		if !server.IsActive() {
-			fmt.Println("Server is no longer active")
-			break
-		}
 	}
 
 	fmt.Println("VNC server stopped")

@@ -239,7 +239,7 @@ func (s *Server) InitServer() error {
 }
 
 func (s *Server) ProcessEvents(timeoutMs int) {
-	C.rfbProcessEvents(s.rfbScreen, C.long(timeoutMs*1000)) // Convert to microseconds
+	C.rfbProcessEvents(s.rfbScreen, C.long(timeoutMs*1000))
 }
 
 func (s *Server) RunEventLoop(timeoutMs int) error {

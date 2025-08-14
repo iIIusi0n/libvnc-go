@@ -1,6 +1,6 @@
 # libvnc-go
 
-[![Go Reference](https://pkg.go.dev/badge/libvnc-go.svg)](https://pkg.go.dev/libvnc-go)
+[![Go Reference](https://pkg.go.dev/badge/libvnc-go.svg)](https://pkg.go.dev/github.com/libvnc-go/pkg/vnc)
 
 A Go wrapper of libvncserver/libvncclient providing VNC client and server functionality.
 

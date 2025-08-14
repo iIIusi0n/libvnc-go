@@ -43,7 +43,6 @@ type KeyEventHandler func(down bool, key uint32, clientPtr unsafe.Pointer)
 type PointerEventHandler func(buttonMask, x, y int, clientPtr unsafe.Pointer)
 type NewClientHandler func(clientPtr unsafe.Pointer)
 
-
 var (
 	serverHandlers = make(map[*C.rfbScreenInfo]*Server)
 	serverMutex    sync.RWMutex
@@ -70,7 +69,7 @@ func goKeyEventCallback(down C.rfbBool, key C.rfbKeySym, cl C.rfbClientPtr) {
 		}
 	}
 	serverMutex.RUnlock()
-	
+
 	if server != nil && server.keyEventHandler != nil {
 		server.keyEventHandler(down != 0, uint32(key), unsafe.Pointer(cl))
 	}
@@ -97,7 +96,7 @@ func goPointerEventCallback(buttonMask C.int, x C.int, y C.int, cl C.rfbClientPt
 		}
 	}
 	serverMutex.RUnlock()
-	
+
 	if server != nil && server.pointerEventHandler != nil {
 		server.pointerEventHandler(int(buttonMask), int(x), int(y), unsafe.Pointer(cl))
 	}
@@ -124,14 +123,13 @@ func goNewClientCallback(cl C.rfbClientPtr) C.enum_rfbNewClientAction {
 		}
 	}
 	serverMutex.RUnlock()
-	
+
 	if server != nil && server.newClientHandler != nil {
 		server.newClientHandler(unsafe.Pointer(cl))
 	}
-	
+
 	return C.RFB_CLIENT_ACCEPT
 }
-
 
 type Server struct {
 	rfbScreen           *C.rfbScreenInfo
@@ -148,21 +146,21 @@ func NewServer(width, height, bitsPerSample, samplesPerPixel, bytesPerPixel int)
 	if screen == nil {
 		return nil
 	}
-	
+
 	bufferSize := width * height * bytesPerPixel
 	frameBuffer := make([]byte, bufferSize)
 	screen.frameBuffer = (*C.char)(unsafe.Pointer(&frameBuffer[0]))
-	
+
 	server := &Server{
 		rfbScreen:   screen,
 		frameBuffer: frameBuffer,
 		running:     false,
 	}
-	
+
 	serverMutex.Lock()
 	serverHandlers[screen] = server
 	serverMutex.Unlock()
-	
+
 	return server
 }
 
@@ -185,10 +183,6 @@ func (s *Server) SetPixelFormat(format PixelFormat) {
 	s.rfbScreen.serverFormat.redShift = C.uchar(format.RedShift)
 	s.rfbScreen.serverFormat.greenShift = C.uchar(format.GreenShift)
 	s.rfbScreen.serverFormat.blueShift = C.uchar(format.BlueShift)
-}
-
-func (s *Server) SetBGR0PixelFormat() {
-	s.SetPixelFormat(PixelFormatBGR0)
 }
 
 func (s *Server) SetStandardPixelFormat() {
@@ -221,7 +215,6 @@ func (s *Server) SetNewClientHandler(handler NewClientHandler) {
 	s.newClientHandler = handler
 	C.setNewClientCallback(s.rfbScreen)
 }
-
 
 func (s *Server) GetFrameBuffer() []byte {
 	return s.frameBuffer
@@ -276,16 +269,16 @@ func (s *Server) Stop() {
 
 func (s *Server) Close() {
 	s.Stop()
-	
+
 	serverMutex.Lock()
 	delete(serverHandlers, s.rfbScreen)
 	serverMutex.Unlock()
-	
+
 	if s.passwordCString != nil {
 		C.free(unsafe.Pointer(s.passwordCString))
 		s.passwordCString = nil
 	}
-	
+
 	if s.rfbScreen != nil {
 		C.rfbScreenCleanup(s.rfbScreen)
 		s.rfbScreen = nil

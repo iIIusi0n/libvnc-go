@@ -27,16 +27,10 @@ func main() {
 	}
 	client.SetAppData(appConfig)
 
-	// Configure pixel format for standard (non-IPEPS) connections
 	client.SetStandardPixelFormat()
 
-	// Or for IPEPS connections, use:
-	// client.SetIPEPSPixelFormat()
-
-	// Set framebuffer size handling
 	client.SetCanHandleNewFBSize(false)
 
-	// Set up frame buffer update callback
 	client.SetGotFrameBufferUpdateHandler(func(x, y, w, h int) {
 		// Get framebuffer data
 		buffer := client.GetFrameBuffer()

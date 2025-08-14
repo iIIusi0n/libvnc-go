@@ -66,22 +66,10 @@ type AppDataConfig struct {
 
 // Predefined pixel formats
 var (
-	PixelFormatBGR0 = PixelFormat{
-		BitsPerPixel: 32, Depth: 24, BigEndian: false, TrueColour: true,
-		RedMax: 255, GreenMax: 255, BlueMax: 255,
-		RedShift: 16, GreenShift: 8, BlueShift: 0,
-	}
-
 	PixelFormatStandard = PixelFormat{
 		BitsPerPixel: 32, Depth: 24, BigEndian: false, TrueColour: true,
 		RedMax: 255, GreenMax: 255, BlueMax: 255,
 		RedShift: 0, GreenShift: 8, BlueShift: 16,
-	}
-
-	PixelFormatIPEPS = PixelFormat{
-		BitsPerPixel: 16, Depth: 15, BigEndian: false, TrueColour: true,
-		RedMax: 31, GreenMax: 31, BlueMax: 31,
-		RedShift: 10, GreenShift: 5, BlueShift: 0,
 	}
 )
 
@@ -247,16 +235,8 @@ func (c *Client) SetPixelFormat(format PixelFormat) {
 	c.rfbClient.format.blueShift = C.uchar(format.BlueShift)
 }
 
-func (c *Client) SetIPEPSPixelFormat() {
-	c.SetPixelFormat(PixelFormatIPEPS)
-}
-
 func (c *Client) SetStandardPixelFormat() {
 	c.SetPixelFormat(PixelFormatStandard)
-}
-
-func (c *Client) SetBGR0PixelFormat() {
-	c.SetPixelFormat(PixelFormatBGR0)
 }
 
 func (c *Client) SetAppData(config AppDataConfig) {

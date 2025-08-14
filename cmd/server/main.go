@@ -20,7 +20,7 @@ func main() {
 	server.SetPort(5900)
 	server.SetPassword("password")
 
-	server.SetBGR0PixelFormat()
+	server.SetStandardPixelFormat()
 
 	server.SetKeyEventHandler(func(down bool, key uint32, clientPtr unsafe.Pointer) {
 		action := "up"

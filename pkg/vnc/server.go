@@ -39,10 +39,6 @@ import (
 	"unsafe"
 )
 
-type KeyEventHandler func(down bool, key uint32, clientPtr unsafe.Pointer)
-type PointerEventHandler func(buttonMask, x, y int, clientPtr unsafe.Pointer)
-type NewClientHandler func(clientPtr unsafe.Pointer)
-
 var (
 	serverHandlers = make(map[*C.rfbScreenInfo]*Server)
 	serverMutex    sync.RWMutex
@@ -54,7 +50,6 @@ func goKeyEventCallback(down C.rfbBool, key C.rfbKeySym, cl C.rfbClientPtr) {
 	var server *Server
 	for screen, srv := range serverHandlers {
 		if cl != nil {
-			// Find the server that owns this client
 			clientIter := screen.clientHead
 			for clientIter != nil {
 				if clientIter == cl {
@@ -81,7 +76,6 @@ func goPointerEventCallback(buttonMask C.int, x C.int, y C.int, cl C.rfbClientPt
 	var server *Server
 	for screen, srv := range serverHandlers {
 		if cl != nil {
-			// Find the server that owns this client
 			clientIter := screen.clientHead
 			for clientIter != nil {
 				if clientIter == cl {
@@ -108,7 +102,6 @@ func goNewClientCallback(cl C.rfbClientPtr) C.enum_rfbNewClientAction {
 	var server *Server
 	for screen, srv := range serverHandlers {
 		if cl != nil {
-			// Find the server that owns this client
 			clientIter := screen.clientHead
 			for clientIter != nil {
 				if clientIter == cl {
@@ -137,7 +130,6 @@ type Server struct {
 	keyEventHandler     KeyEventHandler
 	pointerEventHandler PointerEventHandler
 	newClientHandler    NewClientHandler
-	passwordCString     *C.char
 	running             bool
 }
 
@@ -194,11 +186,7 @@ func (s *Server) SetPort(port int) {
 }
 
 func (s *Server) SetPassword(password string) {
-	if s.passwordCString != nil {
-		C.free(unsafe.Pointer(s.passwordCString))
-	}
-	s.passwordCString = C.CString(password)
-	C.setServerPassword(s.rfbScreen, s.passwordCString)
+	C.setServerPassword(s.rfbScreen, C.CString(password))
 }
 
 func (s *Server) SetKeyEventHandler(handler KeyEventHandler) {
@@ -273,11 +261,6 @@ func (s *Server) Close() {
 	serverMutex.Lock()
 	delete(serverHandlers, s.rfbScreen)
 	serverMutex.Unlock()
-
-	if s.passwordCString != nil {
-		C.free(unsafe.Pointer(s.passwordCString))
-		s.passwordCString = nil
-	}
 
 	if s.rfbScreen != nil {
 		C.rfbScreenCleanup(s.rfbScreen)

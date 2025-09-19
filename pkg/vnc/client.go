@@ -40,9 +40,6 @@ import (
 	"unsafe"
 )
 
-type GotFrameBufferUpdateHandler func(x, y, w, h int)
-type FinishedFrameBufferUpdateHandler func()
-
 type PixelFormat struct {
 	BitsPerPixel int
 	Depth        int
@@ -63,7 +60,6 @@ type AppDataConfig struct {
 	UseRemoteCursor bool
 }
 
-// Predefined pixel formats
 var (
 	PixelFormatStandard = PixelFormat{
 		BitsPerPixel: 32, Depth: 24, BigEndian: false, TrueColour: true,
@@ -104,9 +100,6 @@ type Client struct {
 	rfbClient                        *C.rfbClient
 	gotFrameBufferUpdateHandler      GotFrameBufferUpdateHandler
 	finishedFrameBufferUpdateHandler FinishedFrameBufferUpdateHandler
-	hostCString                      *C.char
-	passwordCString                  *C.char
-	encodingsCString                 *C.char
 }
 
 type ServerClient struct {
@@ -183,11 +176,7 @@ func (c *Client) SetFinishedFrameBufferUpdateHandler(handler FinishedFrameBuffer
 }
 
 func (c *Client) SetHost(host string) {
-	if c.hostCString != nil {
-		C.free(unsafe.Pointer(c.hostCString))
-	}
-	c.hostCString = C.CString(host)
-	c.rfbClient.serverHost = c.hostCString
+	c.rfbClient.serverHost = C.CString(host)
 }
 
 func (c *Client) SetPort(port int) {
@@ -195,11 +184,7 @@ func (c *Client) SetPort(port int) {
 }
 
 func (c *Client) SetPassword(password string) {
-	if c.passwordCString != nil {
-		C.free(unsafe.Pointer(c.passwordCString))
-	}
-	c.passwordCString = C.CString(password)
-	C.setPassword(c.rfbClient, c.passwordCString)
+	C.setPassword(c.rfbClient, C.CString(password))
 }
 
 func (c *Client) SetPixelFormat(format PixelFormat) {
@@ -231,11 +216,7 @@ func (c *Client) SetAppData(config AppDataConfig) {
 	c.rfbClient.appData.compressLevel = C.int(config.CompressLevel)
 	c.rfbClient.appData.qualityLevel = C.int(config.QualityLevel)
 
-	if c.encodingsCString != nil {
-		C.free(unsafe.Pointer(c.encodingsCString))
-	}
-	c.encodingsCString = C.CString(config.Encodings)
-	c.rfbClient.appData.encodingsString = c.encodingsCString
+	c.rfbClient.appData.encodingsString = C.CString(config.Encodings)
 
 	if config.UseRemoteCursor {
 		c.rfbClient.appData.useRemoteCursor = C.rfbBool(1)
@@ -257,7 +238,7 @@ func (c *Client) Init() bool {
 }
 
 func (c *Client) WaitForMessage(timeoutMs int) int {
-	return int(C.WaitForMessage(c.rfbClient, C.uint(timeoutMs)))
+	return int(C.WaitForMessage(c.rfbClient, C.uint(timeoutMs*1000)))
 }
 
 func (c *Client) HandleRFBServerMessage() bool {
@@ -344,26 +325,15 @@ func (c *Client) SendKeyEvent(key uint32, down bool) {
 	C.SendKeyEvent(c.rfbClient, C.uint(key), d)
 }
 
+func (c *Client) IsConnected() bool {
+	return c.rfbClient != nil && c.rfbClient.sock >= 0
+}
+
 func (c *Client) Close() {
 	clientMutex.Lock()
 	delete(clientHandlers, c.rfbClient)
 	delete(clientFinishedHandlers, c.rfbClient)
 	clientMutex.Unlock()
-
-	if c.hostCString != nil {
-		C.free(unsafe.Pointer(c.hostCString))
-		c.hostCString = nil
-	}
-
-	if c.passwordCString != nil {
-		C.free(unsafe.Pointer(c.passwordCString))
-		c.passwordCString = nil
-	}
-
-	if c.encodingsCString != nil {
-		C.free(unsafe.Pointer(c.encodingsCString))
-		c.encodingsCString = nil
-	}
 
 	if c.rfbClient != nil {
 		C.rfbClientCleanup(c.rfbClient)
